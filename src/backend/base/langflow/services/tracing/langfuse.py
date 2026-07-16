@@ -59,6 +59,8 @@ def _get_or_create_shared_client(config: dict) -> Langfuse:
     from langfuse import Langfuse
     from opentelemetry.sdk.trace import TracerProvider
 
+    _make_resource_manager_copy_safe()
+
     key = (config["secret_key"], config["public_key"], config["host"])
     with _SharedClient.lock:
         if _SharedClient.client is None or _SharedClient.key != key:
@@ -73,6 +75,29 @@ def _reset_shared_client_for_tests() -> None:
     with _SharedClient.lock:
         _SharedClient.client = None
         _SharedClient.key = None
+
+
+def _make_resource_manager_copy_safe() -> None:
+    """Make shared Langfuse SDK objects survive copy/deepcopy.
+
+    Components carrying a Langfuse ``CallbackHandler`` get deep-copied per tool
+    invocation (``component_tool.py``), and ``deepcopy`` descends into the SDK's
+    object graph: ``LangfuseResourceManager.__new__`` requires credential kwargs
+    that reconstruction never passes (``TypeError``), and the client/handler hold
+    worker threads, ``httpx`` clients, and locks (``cannot pickle '_thread.lock'``).
+    All three are shared-by-design (see ``_SharedClient``), so a copy is the
+    instance itself.
+    """
+    try:
+        from langfuse import Langfuse
+        from langfuse._client.resource_manager import LangfuseResourceManager
+        from langfuse.langchain import CallbackHandler
+    except ImportError:
+        return
+    for cls in (LangfuseResourceManager, Langfuse, CallbackHandler):
+        if "__deepcopy__" not in cls.__dict__:
+            cls.__deepcopy__ = lambda self, memo: self  # type: ignore[attr-defined]  # noqa: ARG005
+            cls.__copy__ = lambda self: self  # type: ignore[attr-defined]
 
 
 def normalize_langfuse_trace_id(trace_id: UUID | str | None) -> str | None:
