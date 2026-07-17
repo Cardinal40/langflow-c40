@@ -39,7 +39,7 @@ RUN apt-get update \
     && NODE_VERSION="22.14.0" \
     && curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${NODE_ARCH}.tar.xz" \
     | tar -xJ -C /usr/local --strip-components=1 \
-    && npm install -g npm@latest \
+    && npm install -g npm@11 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -62,7 +62,7 @@ COPY ./src/sdk/pyproject.toml /app/src/sdk/pyproject.toml
 # dependency-resolution sync.
 COPY ./src/bundles /app/src/bundles
 
-RUN --mount=type=cache,id=uv-cache,target=/root/.cache/uv \
+RUN --mount=type=cache,id=s/d13806c6-28c6-4890-b2b9-b47a34f03df7-uv-cache,target=/root/.cache/uv \
     RUSTFLAGS='--cfg reqwest_unstable' \
     uv sync --frozen --no-install-project --no-editable --extra postgresql --no-group dev
 
@@ -70,7 +70,7 @@ COPY ./src /app/src
 
 COPY src/frontend /tmp/src/frontend
 WORKDIR /tmp/src/frontend
-RUN --mount=type=cache,id=npm-cache,target=/root/.npm \
+RUN --mount=type=cache,id=s/d13806c6-28c6-4890-b2b9-b47a34f03df7-npm-cache,target=/root/.npm \
     npm ci \
     && ESBUILD_BINARY_PATH="" NODE_OPTIONS="--max-old-space-size=4096" JOBS=1 npm run build \
     && cp -r build /app/src/backend/langflow/frontend \
@@ -78,7 +78,7 @@ RUN --mount=type=cache,id=npm-cache,target=/root/.npm \
 
 WORKDIR /app
 
-RUN --mount=type=cache,id=uv-cache,target=/root/.cache/uv \
+RUN --mount=type=cache,id=s/d13806c6-28c6-4890-b2b9-b47a34f03df7-uv-cache,target=/root/.cache/uv \
     RUSTFLAGS='--cfg reqwest_unstable' \
     uv sync --frozen --no-editable --extra postgresql --no-group dev
 
@@ -106,7 +106,7 @@ RUN ARCH=$(dpkg --print-architecture) \
     && if [ -z "$NODE_VERSION" ]; then echo "ERROR: Could not determine Node.js version" && exit 1; fi \
     && curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${NODE_ARCH}.tar.xz" \
     | tar -xJ -C /usr/local --strip-components=1 \
-    && npm install -g npm@latest
+    && npm install -g npm@11
 RUN useradd user -u 1000 -g 0 --no-create-home --home-dir /app/data
 
 COPY --from=builder --chown=1000 /app/.venv /app/.venv
