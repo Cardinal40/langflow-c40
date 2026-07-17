@@ -1,11 +1,15 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ForwardedIconComponent } from "@/components/common/genericIconComponent";
 import ShadTooltip from "@/components/common/shadTooltipComponent";
 import { Button } from "@/components/ui/button";
 import type { MCPTransport } from "@/controllers/API/queries/mcp/use-patch-install-mcp";
 import { toSpaceCase } from "@/utils/stringManipulation";
-import { cn } from "@/utils/utils";
-import { autoInstallers } from "../utils/mcpServerUtils";
+import { cn, getOS } from "@/utils/utils";
+import {
+  autoInstallers,
+  buildClaudeInstallCommand,
+} from "../utils/mcpServerUtils";
 
 interface McpAutoInstallContentProps {
   isLocalConnection: boolean;
@@ -17,6 +21,7 @@ interface McpAutoInstallContentProps {
     transport?: MCPTransport,
   ) => void;
   installedClients?: string[];
+  mcpJson?: string;
 }
 
 export const McpAutoInstallContent = ({
@@ -25,8 +30,22 @@ export const McpAutoInstallContent = ({
   loadingMCP,
   installClient,
   installedClients,
+  mcpJson,
 }: McpAutoInstallContentProps) => {
   const { t } = useTranslation();
+  const [commandCopied, setCommandCopied] = useState(false);
+  const installCommand =
+    !isLocalConnection && mcpJson
+      ? buildClaudeInstallCommand(mcpJson, getOS())
+      : null;
+
+  const copyInstallCommand = () => {
+    if (!installCommand) return;
+    navigator.clipboard.writeText(installCommand);
+    setCommandCopied(true);
+    setTimeout(() => setCommandCopied(false), 2000);
+  };
+
   return (
     <div className="flex flex-col gap-1">
       {!isLocalConnection && (
@@ -37,6 +56,35 @@ export const McpAutoInstallContent = ({
               className="h-4 w-4 shrink-0"
             />
             <span>{t("mcp.installDisabledWarning")}</span>
+          </div>
+        </div>
+      )}
+      {installCommand && (
+        <div
+          className="mb-2 rounded-md border border-border px-3 py-2"
+          data-testid="claude_install_command_panel"
+        >
+          <div className="mb-2 text-sm">
+            Connect <b>Claude Desktop on your computer</b> to this deployed
+            server: copy this command, paste it into your Terminal, then restart
+            Claude Desktop.
+          </div>
+          <div className="flex items-center gap-2">
+            <code className="block max-h-16 flex-1 overflow-hidden text-ellipsis whitespace-nowrap rounded bg-muted px-2 py-1.5 font-mono text-xs text-muted-foreground">
+              {installCommand}
+            </code>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={copyInstallCommand}
+              data-testid="copy_claude_install_command"
+            >
+              <ForwardedIconComponent
+                name={commandCopied ? "Check" : "TerminalSquare"}
+                className="mr-1.5 h-4 w-4"
+              />
+              {commandCopied ? "Copied" : "Copy command"}
+            </Button>
           </div>
         </div>
       )}

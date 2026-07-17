@@ -181,3 +181,33 @@ export const createSyntaxHighlighterStyle = (isDarkMode: boolean) => ({
   "hljs-string": { color: isDarkMode ? "hsla(158, 64%, 52%, 1)" : "#059669" },
   "hljs-attr": { color: isDarkMode ? "hsla(329, 86%, 70%, 1)" : "#DB2777" },
 });
+
+/**
+ * Build a one-line terminal command that installs this project's MCP server
+ * into Claude Desktop's config on the machine where the command is run.
+ * Used when Langflow is deployed (one-click install can only write to the
+ * server's own filesystem, not the user's). Returns null for platforms
+ * where we don't generate a command (windows/wsl -> use the JSON tab).
+ */
+export const buildClaudeInstallCommand = (
+  mcpJson: string,
+  platform?: string,
+): string | null => {
+  if (platform === "windows" || platform === "wsl") return null;
+  const configPath =
+    platform === "linux"
+      ? "'.config/Claude/claude_desktop_config.json'"
+      : "'Library/Application Support/Claude/claude_desktop_config.json'";
+  // base64 avoids every shell/quote escaping issue in the embedded JSON
+  const b64 = btoa(unescape(encodeURIComponent(mcpJson)));
+  return (
+    'python3 -c "import base64,json,pathlib;' +
+    `p=pathlib.Path.home()/${configPath.replace(/'/g, "'")};` +
+    `new=json.loads(base64.b64decode('${b64}').decode())['mcpServers'];` +
+    "cfg=json.loads(p.read_text()) if p.exists() else {};" +
+    "cfg.setdefault('mcpServers',{}).update(new);" +
+    "p.parent.mkdir(parents=True,exist_ok=True);" +
+    "p.write_text(json.dumps(cfg,indent=2));" +
+    "print('Installed:',', '.join(new),'- now restart Claude Desktop')\""
+  );
+};

@@ -167,6 +167,7 @@ const McpServerTab = ({ folderName }: { folderName: string }) => {
                 loadingMCP={loadingMCP}
                 installClient={installClient}
                 installedClients={installedClients}
+                mcpJson={mcpJson}
               />
             )}
           </div>
