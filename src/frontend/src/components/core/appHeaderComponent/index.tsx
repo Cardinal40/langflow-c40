@@ -81,6 +81,27 @@ export default function AppHeader(): JSX.Element {
         data-testid="header_right_section_wrapper"
       >
         {false && <ModelProviderCount />}
+        <ShadTooltip
+          content="Connect this project's flows to Claude (MCP Server)"
+          side="bottom"
+        >
+          <Button
+            unstyled
+            onClick={() => navigate("/mcp")}
+            data-testid="connect_claude_button"
+          >
+            <div className="hit-area-hover group flex items-center gap-1.5 rounded-md px-2 py-2 text-muted-foreground">
+              <ForwardedIconComponent
+                name="Claude"
+                className="side-bar-button-size h-4 w-4 group-hover:text-primary"
+                strokeWidth={2}
+              />
+              <span className="hidden text-sm font-medium group-hover:text-primary lg:inline">
+                Connect Claude
+              </span>
+            </div>
+          </Button>
+        </ShadTooltip>
         <div className="hidden pr-2 whitespace-nowrap lg:inline-flex lg:items-center">
           <CustomLangflowCounts />
         </div>
