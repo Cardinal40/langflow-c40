@@ -810,11 +810,24 @@ if __name__ == "__main__":
     #                          MCP_PATH_SECRET (unguessable URL path segment).
     transport = os.environ.get("MCP_TRANSPORT", "stdio")
     if transport in ("http", "streamable-http", "sse"):
+        from mcp.server.transport_security import TransportSecuritySettings
+
         mcp.settings.host = os.environ.get("MCP_HOST", "0.0.0.0")
         mcp.settings.port = int(os.environ.get("MCP_PORT") or os.environ.get("PORT") or "8765")
         secret = os.environ.get("MCP_PATH_SECRET", "")
         if secret:
             mcp.settings.streamable_http_path = f"/mcp-{secret}"
+        # The SDK's DNS-rebinding protection only allows localhost by default;
+        # behind a public domain we must allow that host (secret path = auth).
+        allowed = os.environ.get(
+            "MCP_ALLOWED_HOSTS",
+            os.environ.get("RAILWAY_PUBLIC_DOMAIN", "*"),
+        )
+        hosts = [h.strip() for h in allowed.split(",") if h.strip()]
+        mcp.settings.transport_security = TransportSecuritySettings(
+            allowed_hosts=hosts + [f"{h}:443" for h in hosts if ":" not in h and h != "*"],
+            allowed_origins=["*"],
+        )
         mcp.run(transport="streamable-http")
     else:
         mcp.run()
