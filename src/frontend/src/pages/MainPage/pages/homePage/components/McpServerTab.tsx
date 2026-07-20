@@ -87,6 +87,25 @@ const McpServerTab = ({ folderName }: { folderName: string }) => {
         </div>
       </div>
 
+      <div className="mb-6 rounded-md border border-border bg-muted/40 px-4 py-3 text-mmd">
+        <div className="mb-2 font-medium">Connect Claude Desktop</div>
+        <ol className="ml-4 list-decimal space-y-1 text-muted-foreground">
+          <li>
+            In Claude, open <b>Settings → Connectors</b>, then click{" "}
+            <b>Browse → Add custom connector</b>. (If you don't see it, enable{" "}
+            <b>Settings → Developer</b> first.)
+          </li>
+          <li>
+            Give it a name (e.g. <b>langflow</b>) and paste the server URL from
+            the <b>JSON</b> tab (the <code>url</code> value), then save.
+          </li>
+          <li>
+            Open a new chat — the connector's tools appear under the tools icon
+            below the message box. Ask Claude what it can do to get started.
+          </li>
+        </ol>
+      </div>
+
       <div className="flex flex-col justify-between gap-8 xl:flex-row">
         <McpFlowsSection
           flowsMCPData={flowsMCPData}
